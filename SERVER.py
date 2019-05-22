@@ -7,7 +7,6 @@ import time
 user=list()
 usuarios=list()
 canales=list()
-username=""
 servidor_encendido = 1
 
 def primer_login(socketServer):
@@ -18,22 +17,19 @@ def primer_login(socketServer):
     user.append(direccion)
     user.append(cliente)
     usuarios.append(user)
+    x=threading.Thread(target=recibo,args=(cliente,))
+    x.start()
 
 def login(socketServer):
-    while servidor_encendido:
+    servidor_encendido = 1
+    while 1:
         cliente,direccion = socketServer.accept()
         cliente.send("Introduce tu nombre de usuario: ")
-        print "test1"
-        cliente.send("test2")
         username = cliente.recv(2048)
-        cliente.send("test2")
-        print "test2"
         while username in usuarios:
             print "Usuario ya en el sistema"
             cliente.send("Nombre no disponible.\nIntroduce tu nombre de usuario: ")
             username = cliente.recv(2048)
-        print "test3"
-        cliente.send("test3")
         user[0] = username
         user[1] = direccion
         user[2] = cliente
@@ -51,13 +47,13 @@ def ini_server():
     socketServer = socket(AF_INET,SOCK_STREAM)
     socketServer.bind(dataConection)
 
-def envio(mensaje):
+def envio(socketClient,mensaje):
     while servidor_encendido:
         socketClient.send(mensaje)
 
 def recibo(cliente):
     print "Cliente" + str(cliente) + "esta a la escucha :)"
-    while servidor_encendido:
+    while 1:
         respuesta=cliente.recv(2048)
         print(respuesta)
         if respuesta == "EXIT":
