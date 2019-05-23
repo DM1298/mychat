@@ -9,10 +9,10 @@ cliente_encendido = 1
 
 def envio(socketClient):
     while 1:
-        mensaje = raw_input('Send: ')
+        mensaje = raw_input('')
         socketClient.send(mensaje)
         if mensaje == "EXIT":
-            exit()
+            threading.exit()
 
 def recibo(socketClient):
     while 1:
@@ -20,12 +20,12 @@ def recibo(socketClient):
         print(respuesta)
         if respuesta == "EXIT":
             socketClient.close()
-            exit()
+            threading.exit()
 
 
 
-#serverIp = raw_input('Introduce la direccion ip del servidor:')
-serverIp = "0.0.0.0"
+serverIp = raw_input('Introduce la direccion ip del servidor:')
+#serverIp = "0.0.0.0"
 serverPort = input('Introduce el puerto del servidor:')
 dataConection = (serverIp,serverPort)
 socketClient = socket(AF_INET,SOCK_STREAM)

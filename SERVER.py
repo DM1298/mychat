@@ -21,7 +21,7 @@ def primer_login(socketServer):
     user.append(cliente)
     nuevo_grupo=["GENERAL"]
     nuevo_grupo.append(user)
-    cliente.send("Bienvenido al servidor!")
+    welcome(cliente)
     print "Usuario " + username + " ha entrado al sistema"
     usuarios.append(user)
     canales.append(nuevo_grupo)
@@ -43,12 +43,10 @@ def login(socketServer):
         user.append(username)
         user.append(direccion)
         user.append(cliente)
-        nuevo_grupo=["GENERAL"]
-        nuevo_grupo.append(user)
-        cliente.send("Bienvenido al servidor!")
+        welcome(cliente)
         print "Usuario " + username + " ha entrado al sistema"
         usuarios.append(user)
-        canales.append(nuevo_grupo)
+        canales[0].append(user)
         x=threading.Thread(target=recibo,args=(cliente,username,direccion,))
         x.start()
 
@@ -76,7 +74,6 @@ def recibo(cliente,username,direccion,):
         elif respuesta == "MOSTRA_TOTS":
             ver_todos(cliente)
         elif respuesta[:6] == "PRIVAT":
-            x="WORK IN PROGRESS...."
             envia(cliente,x)
             privado(username,respuesta[7:],cliente)
         elif respuesta[:6] == "CANVIA":
@@ -147,12 +144,14 @@ def ver_usuarios(socketClient,canales_actuales):
 
 #Funcion que borra al usuario del sistema
 def sal_del_sistema(user):
-    usuarios.remove(user[0])
-    usuarios.remove(user[1])
-    usuarios.remove(user[2])
-    canales.remove(user[0])
-    canales.remove(user[1])
-    canales.remove(user[2])
+    for x in range(len(usuarios)):
+        usuarios[x].remove(user[0])
+        usuarios[x].remove(user[1])
+        usuarios[x].remove(user[2])
+    for x in range(len(canales)):
+        canales[x].remove(user[0])
+        canales[x].remove(user[1])
+        canales[x].remove(user[2])
 
 def main():
     serverIp = '127.0.0.1'
@@ -161,7 +160,7 @@ def main():
     #creamos el socket de conexiones
     socketServer = socket(AF_INET,SOCK_STREAM)
     socketServer.bind(dataConection)
-    socketServer.listen(100)
+    socketServer.listen(1000)
     primer_login(socketServer)
     x=threading.Thread(target=login,args=(socketServer,))
     x.start()
