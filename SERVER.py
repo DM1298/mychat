@@ -19,9 +19,11 @@ def primer_login(socketServer):
     user.append(username)
     user.append(direccion)
     user.append(cliente)
-    usuarios.append(user)
     nuevo_grupo=["GENERAL"]
     nuevo_grupo.append(user)
+    cliente.send("Bienvenido al servidor!")
+    print "Usuario " + username + " ha entrado al sistema"
+    usuarios.append(user)
     canales.append(nuevo_grupo)
     x=threading.Thread(target=recibo,args=(cliente,username,direccion,))
     x.start()
@@ -38,12 +40,15 @@ def login(socketServer):
             print "Usuario ya en el sistema"
             cliente.send("Nombre no disponible.\nIntroduce tu nombre de usuario: ")
             username = cliente.recv(2048)
-        user[0] = username
-        user[1] = direccion
-        user[2] = cliente
+        user.append(username)
+        user.append(direccion)
+        user.append(cliente)
+        nuevo_grupo=["GENERAL"]
+        nuevo_grupo.append(user)
         cliente.send("Bienvenido al servidor!")
-        print "Usuario " + userneme + " ha entrado al sistema"
+        print "Usuario " + username + " ha entrado al sistema"
         usuarios.append(user)
+        canales.append(nuevo_grupo)
         x=threading.Thread(target=recibo,args=(cliente,username,direccion,))
         x.start()
 
@@ -56,59 +61,89 @@ def ini_server():
     socketServer.bind(dataConection)
 
 def recibo(cliente,username,direccion,):
-    canales_actuales["GENERAL"]
+    canales_actuales = ["GENERAL"]
     user = list()
-    user[0] = username
-    user[1] = direccion
-    user[2] = cliente
+    user.append(username)
+    user.append(direccion)
+    user.append(cliente)
     while 1:
         respuesta=cliente.recv(2048)
-        print(respuesta)
+        print str(username) + ": " + respuesta
         if respuesta == "MOSTRA_CANALS":
             ver_canales(cliente)
         elif respuesta == "MOSTRA_USUARIS":
-            ver_usuarios(cliente)
+            ver_usuarios(cliente,canales_actuales)
         elif respuesta == "MOSTRA_TOTS":
             ver_todos(cliente)
         elif respuesta[:6] == "PRIVAT":
             x="WORK IN PROGRESS...."
             envia(cliente,x)
+            privado(username,respuesta[7:],cliente)
         elif respuesta[:6] == "CANVIA":
-            x="WORK IN PROGRESS...."
-            envia(cliente,x)
-            print respuesta[7:]
+            canales_actuales.append(respuesta[7:])
+            canvia_canal(user,respuesta[7:])
         elif respuesta[:4] == "CREA":
+            canales_actuales.append(respuesta[5:])
             crea_grupo(respuesta[5:],user)
             envia(cliente,"CANAL CREADO")
         elif respuesta == "EXIT":
             envia(cliente,"EXIT")
+            cliente.close()
             #sal_del_sistema(user)
             print username + " se va!"
             exit()
         else:
-            print "ENVIA MENSAJE AL GRUPO"
-
+            mensaje = username + ": " + respuesta
+            for x in range(len(canales)):
+                for y in range(len(canales_actuales)):
+                    if canales[x][0] == canales_actuales[y]:
+                        for z in range(len(canales[x])):
+                            if z > 0:
+                                canales[x][z][2].send(mensaje)
 
 def envia(cliente,mensaj):
     mensaje = "SERVIDOR: " + str(mensaj)
     cliente.send(mensaje)
 
+#Anade el usuario en el canal designado
+def canvia_canal(user,canal):
+    for x in range(len(canales)):
+        if canales[x][0] == canal:
+            canales[x].append(user)
+            user[2].send("Canal anadido")
+
+#Crea un nuevo canal en la lista de canales
 def crea_grupo(nuevo_grupo,user):
-    nuevo_grupo.append(user)
-    canales.append(nuevo_grupo)
-    envia(user[2],"Gupo creado")
+    grupo = list()
+    grupo.append(nuevo_grupo)
+    grupo.append(user)
+    canales.append(grupo)
+    envia(user[2],"Canal creado")
 
 #FUncion para ver todos los usuarios del sistema
 def ver_todos(socketClient):
-    envia(socketClient,"SERVIDOR:")
     for x in range(len(usuarios)):
         socketClient.send(str(usuarios[x][0]))
 
 #funcion para ver todos los canales del sistema
 def ver_canales(socketClient):
-    envia(socketClient,"SERVIDOR:")
     for x in range(len(canales)):
         socketClient.send(str(canales[x][0]))
+
+def privado(username,destino,cliente):
+    for x in range(len(usuarios)):
+        if str(destino) == str(usuarios[x][0]):
+            cliente.send("Introduce el mensaje privado:")
+            mensaje = cliente.recv(2048)
+            mensaje = username + ": " + mensaje
+            usuarios[x][2].send(mensaje)
+
+def ver_usuarios(socketClient,canales_actuales):
+    for x in range(len(canales)):
+        for y in range(len(canales_actuales)):
+            if canales[x][0] == canales_actuales[y]:
+                for z in range(len(canales[x])):
+                    socketClient.send(canales[x][z][0])
 
 #Funcion que borra al usuario del sistema
 def sal_del_sistema(user):

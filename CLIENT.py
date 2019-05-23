@@ -19,6 +19,7 @@ def recibo(socketClient):
         respuesta=socketClient.recv(2048)
         print(respuesta)
         if respuesta == "EXIT":
+            socketClient.close()
             exit()
 
 
