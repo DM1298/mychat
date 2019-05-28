@@ -84,8 +84,11 @@ def recibo(cliente,username,direccion,):
         elif respuesta[:6] == "PRIVAT":
             privado(username,respuesta[7:],cliente)
         elif respuesta[:6] == "CANVIA":
-            canales_actuales.append(respuesta[7:])
-            canal_actual = respuesta[7:]
+            if respuesta[7:] in canales_actuales:
+                canal_actual = respuesta[7:]
+            else:
+                canales_actuales.append(respuesta[7:])
+                canal_actual = respuesta[7:]
             canvia_canal(user,respuesta[7:])
         elif respuesta[:4] == "CREA":
             crea_grupo(respuesta[5:],user)
@@ -109,7 +112,7 @@ def recibo(cliente,username,direccion,):
                 if canal_actual == canales[x][0]:
                     for z in range(len(canales[x])):
                         if z > 0:
-                            canales[x][z][2].send(mensaje)
+                            canales[x][z][2].send(respuesta)
             #mensaje = username + ": " + respuesta
             #for x in range(len(canales)):
             #    for y in range(len(canales_actuales)):
