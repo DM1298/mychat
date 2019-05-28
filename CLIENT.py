@@ -12,15 +12,18 @@ def envio(socketClient):
         mensaje = raw_input('')
         socketClient.send(mensaje)
         if mensaje == "EXIT":
-            threading.exit()
+            exit()
 
 def recibo(socketClient):
+    prev_respuesta = ""
     while 1:
         respuesta=socketClient.recv(2048)
-        print(respuesta)
-        if respuesta == "EXIT":
-            socketClient.close()
-            threading.exit()
+        if(prev_respuesta != respuesta):
+            prev_respuesta=respuesta
+            print(respuesta)
+            if respuesta == "EXIT":
+                socketClient.close()
+                exit()
 
 
 

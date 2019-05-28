@@ -1,0 +1,10 @@
+CREA "nom_canal": Crea un grup/canal de difusió.
+CANVIA "nom_canal" Et permet connectar-te a un canal ja existent.
+PRIVAT "nom_usuari": Envia un missatge privat a l'usuari indicat.
+MOSTRA_CANALS: Printa per pantalla el conjunt de canals existents al servidor.
+MOSTRA_USUARIS: Printa per pantalla el conjunt d'usuaris existents al sistema.
+MOSTRA_TOTS: Printa per pantalla el conjunt de canals i usuaris que pertanyen a ells al servidor.
+EXIT: Permet tancar l'aplicació.
+CANAL_OCULT "nom_canal": Crea un grup/canal de difusió ocult.
+SURT_CANAL Permet a l'usuari deixar el canal actual
+HELP: Mostra el menú d'ajut de l'aplicació.

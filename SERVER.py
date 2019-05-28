@@ -6,10 +6,13 @@ import time
 
 usuarios=list()
 canales=list()
+ocultos=list()
 
 def welcome(cliente):
     x="Bienvenido al servidor!\n Estos son los comandos que puedes realizar:"
     cliente.send(x)
+    ayuda(cliente)
+
 
 def primer_login(socketServer):
     user=list()
@@ -60,6 +63,7 @@ def ini_server():
 
 def recibo(cliente,username,direccion,):
     canales_actuales = ["GENERAL"]
+    canal_actual = "GENERAL"
     user = list()
     user.append(username)
     user.append(direccion)
@@ -73,16 +77,27 @@ def recibo(cliente,username,direccion,):
             ver_usuarios(cliente,canales_actuales)
         elif respuesta == "MOSTRA_TOTS":
             ver_todos(cliente)
+        elif respuesta == "SURT_CANAL":
+            canales_actuales.remove(canal_actual)
+            surt_grup(user,canal_actual)
+            canal_actual = ""
         elif respuesta[:6] == "PRIVAT":
-            envia(cliente,x)
             privado(username,respuesta[7:],cliente)
         elif respuesta[:6] == "CANVIA":
             canales_actuales.append(respuesta[7:])
+            canal_actual = respuesta[7:]
             canvia_canal(user,respuesta[7:])
         elif respuesta[:4] == "CREA":
-            canales_actuales.append(respuesta[5:])
             crea_grupo(respuesta[5:],user)
             envia(cliente,"CANAL CREADO")
+        elif respuesta[:11] == "CANAL_OCULT":
+            crea_oculto(respuesta[12:],user)
+            envia(cliente,"CANAL OCULTO CREADO")
+        elif respuesta[:12] == "CANVIA_OCULT":
+            canales_actuales.append(respuesta[13:])
+            canvia_canal(user,respuesta[13:])
+        elif respuesta == "HELP":
+            ayuda(cliente)
         elif respuesta == "EXIT":
             envia(cliente,"EXIT")
             cliente.close()
@@ -90,13 +105,29 @@ def recibo(cliente,username,direccion,):
             print username + " se va!"
             exit()
         else:
-            mensaje = username + ": " + respuesta
             for x in range(len(canales)):
-                for y in range(len(canales_actuales)):
-                    if canales[x][0] == canales_actuales[y]:
-                        for z in range(len(canales[x])):
-                            if z > 0:
-                                canales[x][z][2].send(mensaje)
+                if canal_actual == canales[x][0]:
+                    for z in range(len(canales[x])):
+                        if z > 0:
+                            canales[x][z][2].send(mensaje)
+            #mensaje = username + ": " + respuesta
+            #for x in range(len(canales)):
+            #    for y in range(len(canales_actuales)):
+            #        if canales[x][0] == canales_actuales[y]:
+            #            for z in range(len(canales[x])):
+            #                if z > 0:
+            #                    canales[x][z][2].send(mensaje)
+def ayuda(cliente):
+    ayuda = open("help.txt","r")
+    for mens in ayuda:
+            cliente.send(mens)
+    ayuda.close()
+
+def surt_grup(user,canal):
+    for x in range(len(canales)):
+        if canales[x][0] == canal:
+            canales[x].remove(user)
+            user[2].send("Has salido del canal")
 
 def envia(cliente,mensaj):
     mensaje = "SERVIDOR: " + str(mensaj)
@@ -115,12 +146,23 @@ def crea_grupo(nuevo_grupo,user):
     grupo.append(nuevo_grupo)
     grupo.append(user)
     canales.append(grupo)
-    envia(user[2],"Canal creado")
+
+#Crea un nuevo canal oculto en la lista de canales oclutos
+def crea_oculto(nuevo_grupo,user):
+    grupo = list()
+    grupo.append(nuevo_grupo)
+    grupo.append(user)
+    ocultos.append(grupo)
 
 #FUncion para ver todos los usuarios del sistema
 def ver_todos(socketClient):
-    for x in range(len(usuarios)):
-        socketClient.send(str(usuarios[x][0]))
+    for x in range(len(canales)):
+        for z in range(len(canales[x])):
+            if z == 0:
+                socketClient.send(canales[x][z])
+            else:
+                socketClient.send(canales[x][z][0])
+
 
 #funcion para ver todos los canales del sistema
 def ver_canales(socketClient):
@@ -140,7 +182,10 @@ def ver_usuarios(socketClient,canales_actuales):
         for y in range(len(canales_actuales)):
             if canales[x][0] == canales_actuales[y]:
                 for z in range(len(canales[x])):
-                    socketClient.send(canales[x][z][0])
+                    if z == 0:
+                        socketClient.send(canales[x][z])
+                    else:
+                        socketClient.send(canales[x][z][0])
 
 #Funcion que borra al usuario del sistema
 def sal_del_sistema(user):
@@ -154,7 +199,7 @@ def sal_del_sistema(user):
         canales[x].remove(user[2])
 
 def main():
-    serverIp = '127.0.0.1'
+    serverIp = ''
     serverPort = input('Introduce el puerto del servidor:')
     dataConection = (serverIp,serverPort)
     #creamos el socket de conexiones
@@ -174,6 +219,9 @@ def main():
             on=0
             #for x in range(len(usuarios)):
             #    sal_del_sistema(usuarios[x])
+        elif command == "CANALS_OCULTS":
+            for x in range(len(ocultos)):
+                print ocultos[x][0]
     print "GOODBYE!"
 
 
