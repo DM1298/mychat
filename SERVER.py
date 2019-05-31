@@ -23,17 +23,17 @@ def primer_login(socketServer):
     user.append(direccion)
     user.append(cliente)
     nuevo_grupo=["GENERAL"]
-    nuevo_grupo.append(user)
     welcome(cliente)
-    print "Usuario " + username + " ha entrado al sistema"
+    print "Primer usuario " + username + " ha entrado al sistema"
     usuarios.append(user)
     canales.append(nuevo_grupo)
+    canales[0].append(user)
     x=threading.Thread(target=recibo,args=(cliente,username,direccion,))
     x.start()
 
 def login(socketServer):
-    user=list()
     while 1:
+        user=list()
         cliente,direccion = socketServer.accept()
         cliente.send("Introduce tu nombre de usuario: ")
         username = cliente.recv(2048)
@@ -46,10 +46,11 @@ def login(socketServer):
         user.append(username)
         user.append(direccion)
         user.append(cliente)
+        aux=canales[0]
         welcome(cliente)
         print "Usuario " + username + " ha entrado al sistema"
         usuarios.append(user)
-        canales[0].append(user)
+        canvia_canal(user,"GENERAL")
         x=threading.Thread(target=recibo,args=(cliente,username,direccion,))
         x.start()
 
@@ -84,14 +85,16 @@ def recibo(cliente,username,direccion,):
         elif respuesta[:6] == "PRIVAT":
             privado(username,respuesta[7:],cliente)
         elif respuesta[:6] == "CANVIA":
+            print respuesta[7:]
             if respuesta[7:] in canales_actuales:
                 canal_actual = respuesta[7:]
             else:
                 canales_actuales.append(respuesta[7:])
                 canal_actual = respuesta[7:]
             canvia_canal(user,respuesta[7:])
+            user[2].send("Canal actual: " + canal_actual)
         elif respuesta[:4] == "CREA":
-            crea_grupo(respuesta[5:],user)
+            crea_grupo(respuesta[5:])
             envia(cliente,"CANAL CREADO")
         elif respuesta[:11] == "CANAL_OCULT":
             crea_oculto(respuesta[12:],user)
@@ -104,15 +107,15 @@ def recibo(cliente,username,direccion,):
         elif respuesta == "EXIT":
             envia(cliente,"EXIT")
             cliente.close()
-            #sal_del_sistema(user)
             print username + " se va!"
+            sal_del_sistema(user)
             exit()
         else:
             for x in range(len(canales)):
                 if canal_actual == canales[x][0]:
                     for z in range(len(canales[x])):
                         if z > 0:
-                            canales[x][z][2].send(respuesta)
+                            canales[x][z][2].send(username + " " + respuesta)
             #mensaje = username + ": " + respuesta
             #for x in range(len(canales)):
             #    for y in range(len(canales_actuales)):
@@ -141,13 +144,13 @@ def canvia_canal(user,canal):
     for x in range(len(canales)):
         if canales[x][0] == canal:
             canales[x].append(user)
-            user[2].send("Canal anadido")
+            print user[0] + "Anadido al canal: " + canal
+
 
 #Crea un nuevo canal en la lista de canales
-def crea_grupo(nuevo_grupo,user):
-    grupo = list()
+def crea_grupo(nuevo_grupo):
+    grupo=list()
     grupo.append(nuevo_grupo)
-    grupo.append(user)
     canales.append(grupo)
 
 #Crea un nuevo canal oculto en la lista de canales oclutos
@@ -159,6 +162,7 @@ def crea_oculto(nuevo_grupo,user):
 
 #FUncion para ver todos los usuarios del sistema
 def ver_todos(socketClient):
+    print canales
     for x in range(len(canales)):
         for z in range(len(canales[x])):
             if z == 0:
@@ -192,14 +196,11 @@ def ver_usuarios(socketClient,canales_actuales):
 
 #Funcion que borra al usuario del sistema
 def sal_del_sistema(user):
-    for x in range(len(usuarios)):
-        usuarios[x].remove(user[0])
-        usuarios[x].remove(user[1])
-        usuarios[x].remove(user[2])
+    usuarios[x].remove(user)
     for x in range(len(canales)):
-        canales[x].remove(user[0])
-        canales[x].remove(user[1])
-        canales[x].remove(user[2])
+        for y in range(len(canales_actuales)):
+            if canales[x][0] == canales_actuales[y]:
+                canales[x].remove(user)
 
 def main():
     serverIp = ''
