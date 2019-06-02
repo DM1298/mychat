@@ -8,12 +8,16 @@ usuarios=list()
 canales=list()
 ocultos=list()
 
+#Pantalla debienvenida para cada cliente, muestra los comando disponobles y una pequeña descripcion de los mismos.
 def welcome(cliente):
     x="Bienvenido al servidor!\n Estos son los comandos que puedes realizar:"
     cliente.send(x)
     ayuda(cliente)
 
-
+#Funcion para el primer usuario conectado, acepta la conexion entrante, le pide un nombre de usuario,
+#añade el grupo GENERAL a la lista de grupos y mete al usuario dentro de la lista de usuarios y añade
+# al usuario al grupo general dentro de la lista de canales.
+#Al final inicia un nuevo thread por cada cliente.
 def primer_login(socketServer):
     user=list()
     cliente,direccion = socketServer.accept()
@@ -31,6 +35,10 @@ def primer_login(socketServer):
     x=threading.Thread(target=recibo,args=(cliente,username,direccion,))
     x.start()
 
+#Funcion las conexiones entrantes que no sean la primera, acepta la conexion entrante, le pide un nombre de usuario,
+# en caso de que el nombre de usuario ya este en el sistema le pedirá un segundo nombre de usuario al cliente
+#y mete al usuario dentro de la lista de usuarios y añade al usuario al grupo general dentro de la lista de canales.
+#Al final inicia un nuevo thread por cada cliente.
 def login(socketServer):
     while 1:
         user=list()
@@ -53,7 +61,7 @@ def login(socketServer):
         canvia_canal(user,"GENERAL")
         x=threading.Thread(target=recibo,args=(cliente,username,direccion,))
         x.start()
-
+#Inicializa el servidor, le pide al usuario el puerto por el cual quiere correr el servicio y genera un socket de conexiones.
 def ini_server():
     serverIp = ''
     serverPort = input('Introduce el puerto del servidor:')
@@ -62,6 +70,10 @@ def ini_server():
     socketServer = socket(AF_INET,SOCK_STREAM)
     socketServer.bind(dataConection)
 
+#Fuincion principal del programa:
+#   Crea una lista de canales en los que el cliente esta a la escucha
+#   Crea una variable del canal en el cual el cliente envia los mensajes
+#   Se queda a la escucha de los mensajes enviados por el cliente hasta que el cliente envie un EXIT que cierra la conexion
 def recibo(cliente,username,direccion,):
     canales_actuales = ["GENERAL"]
     canal_actual = "GENERAL"
@@ -69,6 +81,8 @@ def recibo(cliente,username,direccion,):
     user.append(username)
     user.append(direccion)
     user.append(cliente)
+    #Cada id es un comando enviado al servidor, en caso de que el usuario no envie ningun comando,
+    #el servidor enviara el mensaje al ultimo grupo al cual se haya conectado el cliente
     while 1:
         respuesta=cliente.recv(2048)
         print str(username) + ": " + respuesta
@@ -116,30 +130,27 @@ def recibo(cliente,username,direccion,):
                     for z in range(len(canales[x])):
                         if z > 0:
                             canales[x][z][2].send(username + " " + respuesta)
-            #mensaje = username + ": " + respuesta
-            #for x in range(len(canales)):
-            #    for y in range(len(canales_actuales)):
-            #        if canales[x][0] == canales_actuales[y]:
-            #            for z in range(len(canales[x])):
-            #                if z > 0:
-            #                    canales[x][z][2].send(mensaje)
+
+#Muestra el contenido del archivo help.txt al cliente, el cual contiene la lista de los comandos que el cliente puede realizar
 def ayuda(cliente):
     ayuda = open("help.txt","r")
     for mens in ayuda:
             cliente.send(mens)
     ayuda.close()
 
+#Borra al usuario del canal pasado por parametro
 def surt_grup(user,canal):
     for x in range(len(canales)):
         if canales[x][0] == canal:
             canales[x].remove(user)
             user[2].send("Has salido del canal")
 
+#Envia un mensaje al cliente pasado por parametro
 def envia(cliente,mensaj):
     mensaje = "SERVIDOR: " + str(mensaj)
     cliente.send(mensaje)
 
-#Anade el usuario en el canal designado
+#Anade el usuario al canal pasado por parametro a la lista de canales
 def canvia_canal(user,canal):
     for x in range(len(canales)):
         if canales[x][0] == canal:
@@ -160,7 +171,8 @@ def crea_oculto(nuevo_grupo,user):
     grupo.append(user)
     ocultos.append(grupo)
 
-#FUncion para ver todos los usuarios del sistema
+#FUncion que envia al cliente todos los usuarios que estan conectados al sistema
+# por cada grupo
 def ver_todos(socketClient):
     print canales
     for x in range(len(canales)):
@@ -171,11 +183,12 @@ def ver_todos(socketClient):
                 socketClient.send(canales[x][z][0])
 
 
-#funcion para ver todos los canales del sistema
+#Funcion que envia al cliente todos los canales del servidor
 def ver_canales(socketClient):
     for x in range(len(canales)):
         socketClient.send(str(canales[x][0]))
 
+#Envia pide al usuario que introduzca un mensaje para enviar al cliente pasado por parametro
 def privado(username,destino,cliente):
     for x in range(len(usuarios)):
         if str(destino) == str(usuarios[x][0]):
@@ -184,6 +197,7 @@ def privado(username,destino,cliente):
             mensaje = username + ": " + mensaje
             usuarios[x][2].send(mensaje)
 
+#Envia al cliente todos los usuarios de todos los canales en los que esta a la escucha
 def ver_usuarios(socketClient,canales_actuales):
     for x in range(len(canales)):
         for y in range(len(canales_actuales)):
@@ -203,6 +217,7 @@ def sal_del_sistema(user):
                 canales[x].remove(user)
 
 def main():
+    #El inicio del codigo hace los mismo que la fincion init()
     serverIp = ''
     serverPort = input('Introduce el puerto del servidor:')
     dataConection = (serverIp,serverPort)
@@ -214,6 +229,9 @@ def main():
     x=threading.Thread(target=login,args=(socketServer,))
     x.start()
     on = 1
+    #Esta parte del main esta dedicada a introducir los comandos desde el servidor:
+        #EXIT: CIerra todas las conexiones del servidor
+        #CANALS_OCULTS: Muestra un listado de los canales ocultos del servidor
     while on:
         command = raw_input("")
         if command == "EXIT":
